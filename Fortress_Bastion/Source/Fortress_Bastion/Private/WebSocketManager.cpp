@@ -21,7 +21,7 @@ void UWebSocketManager::Connect(const FString& Url)
     WebSocket->OnConnected().AddUObject(this, &UWebSocketManager::HandleOnConnected);
     WebSocket->OnConnectionError().AddUObject(this, &UWebSocketManager::HandleOnConnectionError);
     WebSocket->OnClosed().AddUObject(this, &UWebSocketManager::OnClosed);
-    WebSocket->OnMessage().AddUObject(this, &UWebSocketManager::OnMessageReceived);
+    WebSocket->OnMessage().AddUObject(this, &UWebSocketManager::OnMessageReceived); // Используем OnMessage для UE4
 
     UE_LOG(LogTemp, Warning, TEXT("Connecting to WebSocket server: %s"), *Url);
     WebSocket->Connect();
@@ -36,35 +36,10 @@ void UWebSocketManager::SendMessage(const FString& Message)
     }
 }
 
-// ДОБАВЛЕНО: Реализация функции создания аккаунта
-void UWebSocketManager::CreateAccount(const FString& PlayerName, const FString& Email, const FString& Password)
-{
-    // Формируем JSON-строку для запроса
-    FString Request = FString::Printf(
-        TEXT("{\"action\":\"create_account\", \"player_name\":\"%s\", \"email\":\"%s\", \"password\":\"%s\"}"),
-        *PlayerName, *Email, *Password
-    );
-    SendMessage(Request);
-}
-
-// ДОБАВЛЕНО: Реализация функции входа по почте
-void UWebSocketManager::LoginWithEmail(const FString& Email, const FString& Password)
-{
-    // Формируем JSON-строку для запроса
-    FString Request = FString::Printf(
-        TEXT("{\"action\":\"login_with_email\", \"email\":\"%s\", \"password\":\"%s\"}"),
-        *Email, *Password
-    );
-    SendMessage(Request);
-}
-
 void UWebSocketManager::LoginWithToken(const FString& PlayerID, const FString& Token)
 {
-    // Формируем JSON-строку для запроса
-    FString Request = FString::Printf(
-        TEXT("{\"action\":\"login_with_token\", \"player_id\":\"%s\", \"token\":\"%s\"}"),
-        *PlayerID, *Token
-    );
+    // Формируем JSON-строку для запроса на логин
+    FString Request = FString::Printf(TEXT("{\"action\":\"login_with_token\", \"player_id\":\"%s\", \"token\":\"%s\"}"), *PlayerID, *Token);
     SendMessage(Request);
 }
 
@@ -87,12 +62,11 @@ void UWebSocketManager::HandleOnConnectionError(const FString& Error)
 void UWebSocketManager::OnClosed(int32 StatusCode, const FString& Reason, bool bWasClean)
 {
     UE_LOG(LogTemp, Warning, TEXT("WebSocket Closed. Code: %d, Reason: %s"), StatusCode, *Reason);
-    // Сюда можно добавить трансляцию события OnDisconnected, если нужно
 }
 
 void UWebSocketManager::OnMessageReceived(const FString& Message)
 {
-    UE_LOG(LogTemp, Log, TEXT("WebSocket Received: %s"), *Message);
+    UE_LOG(LogTemp, Warning, TEXT("WebSocket Received: %s"), *Message);
 
     // Пытаемся распарсить входящее сообщение как JSON
     TSharedPtr<FJsonObject> JsonObject;
@@ -122,12 +96,8 @@ void UWebSocketManager::OnMessageReceived(const FString& Message)
             }
             else if (Action == TEXT("login_failed"))
             {
-                // ИСПРАВЛЕНО: Пытаемся получить причину с сервера, если ее нет - используем стандартный текст
-                FString Reason = TEXT("Unknown error. Please try again.");
-                JsonObject->TryGetStringField(TEXT("reason"), Reason);
-                OnLoginFailed.Broadcast(Reason);
+                OnLoginFailed.Broadcast(TEXT("Invalid login or token."));
             }
-            // Сюда можно добавлять обработку других "action" от сервера
         }
     }
 }

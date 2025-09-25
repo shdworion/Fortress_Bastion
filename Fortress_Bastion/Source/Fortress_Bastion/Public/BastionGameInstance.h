@@ -1,5 +1,4 @@
 // BastionGameInstance.h
-
 #pragma once
 
 #include "CoreMinimal.h"

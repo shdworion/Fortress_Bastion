@@ -1,4 +1,4 @@
-// Fill out your copyright notice in the Description page of Project Settings.
+// BastionGameInstance.cpp
 #include "BastionGameInstance.h"
 #include "WebSocketManager.h" // Подключаем наш менеджер
 
